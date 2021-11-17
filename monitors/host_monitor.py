@@ -1,12 +1,13 @@
-import sys
+import platform
+import re
+import socket
 import subprocess
+import sys
+from datetime import datetime
+from time import sleep
 
 import requests
 import scapy.all as scapy
-import socket
-from datetime import datetime
-import re
-from time import sleep
 
 
 def discover_hosts(subnet_address):
@@ -37,11 +38,18 @@ def discover_hosts(subnet_address):
 
 def get_response_time(ping_output):
 
-    m = re.search(r"time=([0-9]*)", ping_output)
-    if m.group(1).isnumeric():
-        return str(float(m.group(1))/1000)
-    else:
-        return 0
+    os = platform.system()
+
+    if os.lower() == "linux":
+        m = re.search(r"time=([0-9]*)", ping_output)
+        if m.group(1).isnumeric():
+            return str(float(m.group(1))/1000)
+        else:
+            return 0
+
+    if os.lower() == "darwin":
+        m = re.search(r"min/avg/max/stddev = [0-9.]*/([0-9.]*)", ping_output)
+        return m.group(1)
 
 
 def ping_host(host):
