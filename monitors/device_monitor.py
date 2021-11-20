@@ -1,5 +1,7 @@
 import socket
+import requests
 import yaml
+from pprint import pprint
 
 
 def read_devices_yaml():
@@ -38,17 +40,41 @@ def read_devices_yaml():
 
 def get_devices():
 
-    return {}
+    try:
+        response = requests.get("http://localhost:5000/devices")
+    except requests.exceptions.ConnectionError as e:
+        print(f"!!! Exception trying to get devices via REST API: {e}")
+        return {}
+
+    if response.status_code != 200:
+        print(f"!!! Failed to retrieve devices from server: {response.reason}")
+        return {}
+
+    print("Devices successfully retrieved")
+    return response.json()
 
 
 def update_device(device):
 
-    print(device)
+    try:
+        response = requests.put("http://localhost:5000/devices", params={"name": device["name"]}, json=device)
+    except requests.exceptions.ConnectionError as e:
+        print(f"!!! Exception trying to update device {device['name']}: {e}")
+        return
+
+    if response.status_code != 204:
+        print(f"!!! Attempt to update device {device['name']} failed, status: {response.status_code}")
+        return
+
+    print(f"Successfully updated device: {device['name']}")
 
 
 def main():
 
     read_devices_yaml()
+
+    print("\n\nDevices from quokka-prime server")
+    pprint(get_devices())
 
 
 if __name__ == "__main__":
