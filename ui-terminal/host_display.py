@@ -74,5 +74,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\nExiting host-monitor")
+        print("\n\nExiting host-display")
         exit()

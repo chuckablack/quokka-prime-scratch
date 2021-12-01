@@ -1,7 +1,28 @@
 import socket
+import time
+from datetime import datetime
+import napalm
+from napalm.base.exceptions import NapalmException
 import requests
 import yaml
+import re
+import sys
+from time import sleep
 from pprint import pprint
+
+
+def get_version(device, facts):
+
+    if device["os"] == "iosxe":
+
+        re_version_pattern = r"Version (.*),"
+        version_match = re.search(re_version_pattern, facts["os_version"])
+        if version_match:
+            return version_match.group(1)
+        else:
+            return "--"
+
+    return facts["os_version"]
 
 
 def read_devices_yaml():
@@ -69,12 +90,66 @@ def update_device(device):
     print(f"Successfully updated device: {device['name']}")
 
 
+def get_status(device):
+
+    try:
+        if device["os"] == "ios" or device["os"] == "iosxe":
+            driver = napalm.get_network_driver("ios")
+        elif device["os"] == "nxos-ssh":
+            driver = napalm.get_network_driver("nxos_ssh")
+        elif device["os"] == "nxos":
+            driver = napalm.get_network_driver("nxos")
+        else:
+            driver = napalm.get_network_driver(device["os"])  # try this, it will probably fail
+
+        napalm_device = driver(
+            hostname=device["hostname"],
+            username=device["username"],
+            password=device["password"],
+            optional_args={"port": device["ssh_port"]},
+        )
+        napalm_device.open()
+
+        time_start = time.time()
+        facts = napalm_device.get_facts()
+        response_time = time.time() - time_start
+
+        device["os_version"] = get_version(device, facts)
+        device["model"] = facts["model"]
+        device["availability"] = True
+        device["response_time"] = f"{response_time:.4f}"
+        device["last_heard"] = str(datetime.now())[:-3]
+
+    except NapalmException as e:
+        print(f"  !!! NAPALM exception attempting to get facts for device {device['name']}: {e}")
+        device["availability"] = False
+
+    except BaseException as e:
+        print(f"  !!! Exception attempting get facts for device {device['name']}: {e}")
+        device["availability"] = False
+
+    update_device(device)
+
+
 def main():
 
     read_devices_yaml()
 
-    print("\n\nDevices from quokka-prime server")
-    pprint(get_devices())
+    while True:
+
+        devices = get_devices()
+        pprint(devices)
+        for name, device in devices.items():
+            pprint(device)
+            get_status(device)
+
+        for remaining in range(60, 0, -1):
+            sys.stdout.write("\r")
+            sys.stdout.write(f"  Refresh: {remaining:3d} seconds remaining.")
+            sys.stdout.flush()
+            sleep(1)
+
+        print("   ... pinging hosts ...")
 
 
 if __name__ == "__main__":
