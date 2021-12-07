@@ -149,7 +149,7 @@ def main():
             sys.stdout.flush()
             sleep(1)
 
-        print("   ... pinging hosts ...")
+        print("   ... pinging devices ...")
 
 
 if __name__ == "__main__":

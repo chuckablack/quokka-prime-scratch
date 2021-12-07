@@ -4,6 +4,7 @@ app = Flask(__name__)
 
 global_hosts = dict()
 global_devices = dict()
+global_services = dict()
 
 
 @app.route("/hosts", methods=["GET", "PUT"])
@@ -37,4 +38,21 @@ def devices():
 
         device = request.get_json()
         global_devices[name] = device
+        return {}, 204
+
+
+@app.route("/services", methods=["GET", "PUT"])
+def services():
+    global global_services
+
+    if request.method == "GET":
+        return global_services
+
+    elif request.method == "PUT":
+        name = request.args.get("name")
+        if not name:
+            return "must provide service name on PUT request", 400
+
+        service = request.get_json()
+        global_services[name] = service
         return {}, 204
