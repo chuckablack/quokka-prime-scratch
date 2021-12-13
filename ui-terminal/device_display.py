@@ -71,7 +71,7 @@ def main():
         print_devices(devices)
 
         print()
-        for remaining in range(60, 0, -1):
+        for remaining in range(10, 0, -1):
             sys.stdout.write("\r")
             sys.stdout.write(f"  Refresh: {remaining:3d} seconds remaining.")
             sys.stdout.flush()

@@ -8,7 +8,6 @@ import yaml
 import re
 import sys
 from time import sleep
-from pprint import pprint
 
 
 def get_version(device, facts):
@@ -138,9 +137,7 @@ def main():
     while True:
 
         devices = get_devices()
-        pprint(devices)
         for name, device in devices.items():
-            pprint(device)
             get_status(device)
 
         for remaining in range(60, 0, -1):
